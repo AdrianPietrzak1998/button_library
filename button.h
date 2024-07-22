@@ -42,8 +42,8 @@ typedef struct
 	uint32_t	  TimerLongPressed;
 	uint32_t	  TimerRepeat;
 
-	uint8_t		  ReverseLogic;
-	uint16_t	  NumberBtn;
+	ReverseLogicGpio_t ReverseLogic;
+	uint16_t	  	   NumberBtn;
 
 	void(*ButtonPressed)(uint16_t);
 	void(*ButtonLongPressed)(uint16_t);
