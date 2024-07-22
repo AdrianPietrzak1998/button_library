@@ -60,6 +60,13 @@ void ButtonRegisterReleaseCallback(button_t *Key, void *Callback)
 {
 	Key->ButtonRelease = Callback;
 }
+
+#if RELEASE_AFTER_REPEAT_EN
+void ButtonRegisterReleaseAfterRepeatCallback(button_t *Key, void *Callback)
+{
+	Key->ButtonReleaseAfterRepeat = Callback;
+}
+#endif
 //States routine
 void ButtonIdleRoutine(button_t *Key)
 {
@@ -111,7 +118,11 @@ void ButtonRepeatRoutine(button_t *Key)
 {
 	if(HAL_GPIO_ReadPin(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?GPIO_PIN_SET:GPIO_PIN_RESET)
 	{
+#if !RELEASE_AFTER_REPEAT_EN
 		Key->State = RELEASE;
+#else
+		Key->State = RELEASE_AFTER_REPEAT;
+#endif
 	}
 	else if(HAL_GetTick() - Key->LastTick >= Key->TimerRepeat)
 	{
@@ -131,7 +142,16 @@ void ButtonReleaseRoutine(button_t *Key)
 	}
 	Key->State = IDLE;
 }
-
+#if RELEASE_AFTER_REPEAT_EN
+void ButtonReleaseAfterRepeatRoutine(button_t *Key)
+{
+	if(Key->ButtonReleaseAfterRepeat != NULL)
+	{
+		Key->ButtonReleaseAfterRepeat(Key->NumberBtn);
+	}
+	Key->State = IDLE;
+}
+#endif
 //State machines
 void ButtonTask(button_t *Key)
 {
@@ -156,5 +176,11 @@ void ButtonTask(button_t *Key)
 	case RELEASE:
 		ButtonReleaseRoutine(Key);
 		break;
+
+#if RELEASE_AFTER_REPEAT_EN
+	case RELEASE_AFTER_REPEAT:
+		ButtonReleaseAfterRepeatRoutine(Key);
+		break;
+#endif
 	}
 }

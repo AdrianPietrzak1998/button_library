@@ -9,6 +9,8 @@
 #define INC_BUTTON_H_
 
 // States of state machine
+#define RELEASE_AFTER_REPEAT_EN 1
+
 
 typedef enum{
 	IDLE = 0,
@@ -16,6 +18,9 @@ typedef enum{
 	PRESSED,
 	REPEAT,
 	RELEASE
+#if RELEASE_AFTER_REPEAT_EN
+	,RELEASE_AFTER_REPEAT
+#endif
 
 } BUTTON_STATE;
 
@@ -44,6 +49,9 @@ typedef struct
 	void(*ButtonLongPressed)(uint16_t);
 	void(*ButtonRepeat)(uint16_t);
 	void(*ButtonRelease)(uint16_t);
+#if RELEASE_AFTER_REPEAT_EN
+	void(*ButtonReleaseAfterRepeat)(uint16_t);
+#endif
 
 } button_t;
 
@@ -57,6 +65,9 @@ void ButtonRegisterPressCallback(button_t *Key, void *Callback); //For first pre
 void ButtonRegisterLongPressedCallback(button_t *Key, void *Callback); //If key was long pressed
 void ButtonRegisterRepeatCallback(button_t *Key, void *Callback); //While key is long pressed
 void ButtonRegisterReleaseCallback(button_t *Key, void *Callback); //If key was released
+#if RELEASE_AFTER_REPEAT_EN
+void ButtonRegisterReleaseAfterRepeatCallback(button_t *Key, void *Callback);
+#endif
 
 void ButtonSetDebounceTime(button_t * Key, uint32_t Miliseconds);
 void ButtonSetLongPressedTime(button_t *Key, uint32_t Miliseconds);
