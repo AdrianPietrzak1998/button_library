@@ -8,6 +8,39 @@
 #include "main.h"
 #include "button.h"
 
+#define BTN_LIB_TICK uwTick //Miliseconds timer 32-bit
+
+#define BTN_FORCE_NON_HAL 0
+
+#if BTN_FORCE_NON_HAL
+#undef USE_HAL_DRIVER
+#define HAL_TO_DEFINE
+#endif
+
+#ifdef USE_HAL_DRIVER
+#define BTN_SET GPIO_PIN_SET
+#define BTN_RESET GPIO_PIN_RESET
+#else
+#define BTN_SET 1
+#define BTN_RESET 0
+#endif
+
+static uint8_t ReadState(const GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
+{
+#ifdef USE_HAL_DRIVER
+	return HAL_GPIO_ReadPin(GPIOx, GPIO_Pin);
+#else
+	  if ((GPIOx->IDR & GPIO_Pin) != 0U)
+	  {
+	    return BTN_SET;
+	  }
+	  else
+	  {
+	    return BTN_RESET;
+	  }
+#endif
+}
+
 
 
 //Button init
@@ -70,21 +103,21 @@ void ButtonRegisterReleaseAfterRepeatCallback(button_t *Key, void *Callback)
 //States routine
 void ButtonIdleRoutine(button_t *Key)
 {
-	if(HAL_GPIO_ReadPin(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?GPIO_PIN_RESET:GPIO_PIN_SET)
+	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_RESET:BTN_SET)
 	{
-		Key->LastTick = HAL_GetTick();
+		Key->LastTick = BTN_LIB_TICK;
 		Key->State = DEBOUNCE;
 	}
 }
 
 void ButtonDebounceRoutine(button_t *Key)
 {
-	if((HAL_GetTick() - Key->LastTick) >= Key->TimerDebounce)
+	if((BTN_LIB_TICK - Key->LastTick) >= Key->TimerDebounce)
 	{
-		if(HAL_GPIO_ReadPin(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?GPIO_PIN_RESET:GPIO_PIN_SET)
+		if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_RESET:BTN_SET)
 		{
 			Key->State = PRESSED;
-			Key->LastTick = HAL_GetTick();
+			Key->LastTick = BTN_LIB_TICK;
 			if(Key->ButtonPressed != NULL)
 			{
 				Key->ButtonPressed(Key->NumberBtn);
@@ -99,14 +132,14 @@ void ButtonDebounceRoutine(button_t *Key)
 
 void ButtonPressedRoutine(button_t *Key)
 {
-	if(HAL_GPIO_ReadPin(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?GPIO_PIN_SET:GPIO_PIN_RESET)
+	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
 	{
 		Key->State = RELEASE;
 	}
-	else if(HAL_GetTick() - Key->LastTick >= Key->TimerLongPressed)
+	else if(BTN_LIB_TICK - Key->LastTick >= Key->TimerLongPressed)
 	{
 		Key->State = REPEAT;
-		Key->LastTick = HAL_GetTick();
+		Key->LastTick = BTN_LIB_TICK;
 		if(Key->ButtonLongPressed != NULL)
 		{
 			Key->ButtonLongPressed(Key->NumberBtn);
@@ -116,7 +149,7 @@ void ButtonPressedRoutine(button_t *Key)
 
 void ButtonRepeatRoutine(button_t *Key)
 {
-	if(HAL_GPIO_ReadPin(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?GPIO_PIN_SET:GPIO_PIN_RESET)
+	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
 	{
 #if !RELEASE_AFTER_REPEAT_EN
 		Key->State = RELEASE;
@@ -124,9 +157,9 @@ void ButtonRepeatRoutine(button_t *Key)
 		Key->State = RELEASE_AFTER_REPEAT;
 #endif
 	}
-	else if(HAL_GetTick() - Key->LastTick >= Key->TimerRepeat)
+	else if(BTN_LIB_TICK - Key->LastTick >= Key->TimerRepeat)
 	{
-		Key->LastTick = HAL_GetTick();
+		Key->LastTick = BTN_LIB_TICK;
 		if(Key->ButtonRepeat != NULL)
 		{
 			Key->ButtonRepeat(Key->NumberBtn);
@@ -184,3 +217,7 @@ void ButtonTask(button_t *Key)
 #endif
 	}
 }
+
+#ifdef HAL_TO_DEFINE
+#define USE_HAL_DRIVER
+#endif
