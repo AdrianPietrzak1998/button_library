@@ -10,7 +10,7 @@
 
 #define BTN_LIB_TICK uwTick //Miliseconds timer 32-bit
 
-#define BTN_FORCE_NON_HAL 0
+#define BTN_FORCE_NON_HAL 1
 
 #if BTN_FORCE_NON_HAL
 #undef USE_HAL_DRIVER
@@ -41,7 +41,55 @@ static uint8_t ReadState(const GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
 #endif
 }
 
+#if MULTIPLE_CLICK
+static void MultipleClickDebounce(button_t * Key)
+{
+	if(Key->MultipleClickMode == MULTIPLE_CLICK_OFF)
+	{
+		Key->State = PRESSED;
+		Key->LastTick = BTN_LIB_TICK;
+		if(Key->ButtonPressed != NULL)
+		{
+			Key->ButtonPressed(Key->NumberBtn);
+		}
+		return;
+	}
+	else if(Key->MultipleClickMode == NORMAL_MODE)
+	{
+		Key->State = PRESSED;
+		Key->LastTick = BTN_LIB_TICK;
+		if(Key->ButtonPressed != NULL)
+		{
+			Key->ButtonPressed(Key->NumberBtn);
+		}
+		if(BTN_LIB_TICK - Key->LastClickTick <= Key->TimerBetweenClick)
+		{
+			Key->ClickCounter++;
+			if(Key->ClickCounter > 2)
+			{
+				Key->ClickCounter = 0;
+				return;
+			}
+			switch(Key->ClickCounter)
+			{
+			case 1:
+				if(Key->ButtonDoubleClick != NULL) Key->ButtonDoubleClick(Key->NumberBtn);
+				break;
+			case 2:
+				if(Key->ButtonTripleClick != NULL) Key->ButtonTripleClick(Key->NumberBtn);
+				break;
+			default:
+				break;
+			}
+		}
+		else Key->ClickCounter = 0;
+	}
+	else if(Key->MultipleClickMode == COMBINED_MODE)
+	{
 
+	}
+}
+#endif
 
 //Button init
 void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uint32_t TimerDebounce,
@@ -100,6 +148,16 @@ void ButtonRegisterReleaseAfterRepeatCallback(button_t *Key, void *Callback)
 	Key->ButtonReleaseAfterRepeat = Callback;
 }
 #endif
+#if MULTIPLE_CLICK
+void ButtonRegisterDoubleClickCallback(button_t *Key, void *Callback)
+{
+	Key->ButtonDoubleClick = Callback;
+}
+void ButtonRegisterTripleClickCallback(button_t *Key, void *Callback)
+{
+	Key->ButtonTripleClick = Callback;
+}
+#endif
 //States routine
 void ButtonIdleRoutine(button_t *Key)
 {
@@ -116,12 +174,18 @@ void ButtonDebounceRoutine(button_t *Key)
 	{
 		if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_RESET:BTN_SET)
 		{
+
+#if MULTIPLE_CLICK
+			MultipleClickDebounce(Key);
+			Key->LastClickTick = BTN_LIB_TICK;
+#else
 			Key->State = PRESSED;
 			Key->LastTick = BTN_LIB_TICK;
 			if(Key->ButtonPressed != NULL)
 			{
 				Key->ButtonPressed(Key->NumberBtn);
 			}
+#endif
 		}
 		else
 		{
@@ -185,6 +249,7 @@ void ButtonReleaseAfterRepeatRoutine(button_t *Key)
 	Key->State = IDLE;
 }
 #endif
+
 //State machines
 void ButtonTask(button_t *Key)
 {

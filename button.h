@@ -10,6 +10,8 @@
 
 // States of state machine
 #define RELEASE_AFTER_REPEAT_EN 1
+#define MULTIPLE_CLICK 0
+
 
 
 typedef enum{
@@ -21,13 +23,18 @@ typedef enum{
 #if RELEASE_AFTER_REPEAT_EN
 	,RELEASE_AFTER_REPEAT
 #endif
-
 } BUTTON_STATE;
 
 typedef enum{
 	NON_REVERSE = 0,
 	REVERSE
 }ReverseLogicGpio_t;
+
+typedef enum{
+	MULTIPLE_CLICK_OFF = 0,
+	NORMAL_MODE,
+	COMBINED_MODE
+}MultipleClickMode_t;
 
 // Struct for buttons
 typedef struct
@@ -52,6 +59,15 @@ typedef struct
 #if RELEASE_AFTER_REPEAT_EN
 	void(*ButtonReleaseAfterRepeat)(uint16_t);
 #endif
+#if MULTIPLE_CLICK
+	void(*ButtonDoubleClick)(uint16_t);
+	void(*ButtonTripleClick)(uint16_t);
+
+	MultipleClickMode_t MultipleClickMode;
+	uint8_t 			ClickCounter;
+	uint32_t	  		TimerBetweenClick;
+	uint32_t			LastClickTick;
+#endif
 
 } button_t;
 
@@ -60,13 +76,17 @@ void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uin
 					uint32_t TimerRepeat, ReverseLogicGpio_t ReverseLogic, uint16_t Number); // Initialization for state machine
 void ButtonTask(button_t *Key); //Task for working state machine
 
-//Registers functions need Callback as a pointer, type name of function without '()'
+//Registers functions need Callback as a pointer
 void ButtonRegisterPressCallback(button_t *Key, void *Callback); //For first press key
 void ButtonRegisterLongPressedCallback(button_t *Key, void *Callback); //If key was long pressed
 void ButtonRegisterRepeatCallback(button_t *Key, void *Callback); //While key is long pressed
 void ButtonRegisterReleaseCallback(button_t *Key, void *Callback); //If key was released
 #if RELEASE_AFTER_REPEAT_EN
 void ButtonRegisterReleaseAfterRepeatCallback(button_t *Key, void *Callback);
+#endif
+#if MULTIPLE_CLICK
+void ButtonRegisterDoubleClickCallback(button_t *Key, void *Callback);
+void ButtonRegisterTripleClickCallback(button_t *Key, void *Callback);
 #endif
 
 void ButtonSetDebounceTime(button_t * Key, uint32_t Miliseconds);
