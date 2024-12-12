@@ -1,5 +1,5 @@
 
-# Button Library - README
+# Button Library
 
 ## Introduction
 This library provides an easy-to-use interface for handling button input in embedded systems. It supports a state machine for buttons with features like debouncing, long-press detection, repeat functionality, and multiple click modes. The library is designed to work with GPIO pins on a microcontroller, with options to customize debounce times, long press durations, and actions for various button states.
