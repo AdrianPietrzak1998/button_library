@@ -64,9 +64,9 @@ typedef struct
 	void(*ButtonTripleClick)(uint16_t);
 
 	MultipleClickMode_t MultipleClickMode;
-	uint8_t 			ClickCounter;
-	uint8_t				ClickCounterCycle;
-	uint8_t				CombinedModeRepeatPressEx;
+	uint8_t 			ClickCounter:6;
+	uint8_t				ClickCounterCycle:1;
+	uint8_t				CombinedModeRepeatPressEx:1;
 	uint32_t	  		TimerBetweenClick;
 	uint32_t			LastClickTick;
 #endif
@@ -76,6 +76,9 @@ typedef struct
 // Public function
 void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uint32_t TimerDebounce, uint32_t TimerLongPressed,
 					uint32_t TimerRepeat, ReverseLogicGpio_t ReverseLogic, uint16_t Number); // Initialization for state machine
+#if MULTIPLE_CLICK
+void ButtonSetMultipleClick(button_t * Key, MultipleClickMode_t MultipleClickMode, uint32_t TimerBetweenClick);
+#endif
 void ButtonTask(button_t *Key); //Task for working state machine
 
 //Registers functions need Callback as a pointer
