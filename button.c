@@ -46,7 +46,7 @@ static void MultipleClickDebounce(button_t * Key)
 {
 	if(Key->MultipleClickMode == MULTIPLE_CLICK_OFF)
 	{
-		Key->State = PRESSED;
+//		Key->State = PRESSED;
 		Key->LastTick = BTN_LIB_TICK;
 		if(Key->ButtonPressed != NULL)
 		{
@@ -56,7 +56,7 @@ static void MultipleClickDebounce(button_t * Key)
 	}
 	else if(Key->MultipleClickMode == NORMAL_MODE)
 	{
-		Key->State = PRESSED;
+//		Key->State = PRESSED;
 		Key->LastTick = BTN_LIB_TICK;
 		if(Key->ButtonPressed != NULL)
 		{
@@ -84,10 +84,56 @@ static void MultipleClickDebounce(button_t * Key)
 		}
 		else Key->ClickCounter = 0;
 	}
-	else if(Key->MultipleClickMode == COMBINED_MODE)
+	else if(Key->MultipleClickMode == COMBINED_MODE && Key->ClickCounterCycle == 0)
 	{
+		Key->ClickCounterCycle = 1;
+		if(BTN_LIB_TICK - Key->LastClickTick <= Key->TimerBetweenClick)
+		{
+			Key->ClickCounter++;
+			if(Key->ClickCounter > 3)
+			{
+				Key->ClickCounter = 0;
+				return;
+			}
+		}
+		else Key->ClickCounter = 1;
 
 	}
+}
+
+static void multipleClikIdle(button_t * Key)
+{
+	if(Key->MultipleClickMode != COMBINED_MODE) return;
+	Key->CombinedModeRepeatPressEx = 0;
+	Key->ClickCounterCycle = 0;
+	if(BTN_LIB_TICK - Key->LastClickTick > Key->TimerBetweenClick)
+	{
+		switch(Key->ClickCounter)
+		{
+		case 1:
+			if(Key->ButtonPressed != NULL) Key->ButtonPressed(Key->NumberBtn);
+			break;
+		case 2:
+			if(Key->ButtonDoubleClick != NULL) Key->ButtonDoubleClick(Key->NumberBtn);
+			break;
+		case 3:
+			if(Key->ButtonTripleClick != NULL) Key->ButtonTripleClick(Key->NumberBtn);
+			break;
+		default:
+			break;
+		}
+		Key->ClickCounter = 0;
+	}
+}
+
+static void multipleClikRepeat(button_t * Key)
+{
+	if(Key->ButtonPressed != NULL && !Key->CombinedModeRepeatPressEx)
+	{
+		Key->ButtonPressed(Key->NumberBtn);
+		Key->CombinedModeRepeatPressEx = 1;
+	}
+	Key->ClickCounter = 0;
 }
 #endif
 
@@ -161,6 +207,9 @@ void ButtonRegisterTripleClickCallback(button_t *Key, void *Callback)
 //States routine
 void ButtonIdleRoutine(button_t *Key)
 {
+#if MULTIPLE_CLICK
+	multipleClikIdle(Key);
+#endif
 	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_RESET:BTN_SET)
 	{
 		Key->LastTick = BTN_LIB_TICK;
@@ -177,6 +226,7 @@ void ButtonDebounceRoutine(button_t *Key)
 
 #if MULTIPLE_CLICK
 			MultipleClickDebounce(Key);
+			Key->State = PRESSED;
 			Key->LastClickTick = BTN_LIB_TICK;
 #else
 			Key->State = PRESSED;
@@ -213,6 +263,9 @@ void ButtonPressedRoutine(button_t *Key)
 
 void ButtonRepeatRoutine(button_t *Key)
 {
+#if MULTIPLE_CLICK
+	multipleClikRepeat(Key);
+#endif
 	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
 	{
 #if !RELEASE_AFTER_REPEAT_EN

@@ -10,7 +10,7 @@
 
 // States of state machine
 #define RELEASE_AFTER_REPEAT_EN 1
-#define MULTIPLE_CLICK 0
+#define MULTIPLE_CLICK 1
 
 
 
@@ -65,6 +65,8 @@ typedef struct
 
 	MultipleClickMode_t MultipleClickMode;
 	uint8_t 			ClickCounter;
+	uint8_t				ClickCounterCycle;
+	uint8_t				CombinedModeRepeatPressEx;
 	uint32_t	  		TimerBetweenClick;
 	uint32_t			LastClickTick;
 #endif
