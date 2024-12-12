@@ -2,7 +2,7 @@
  * button.h
  *
  *  Created on: May 7, 2022
- *      Author: Adrian
+ *      Author: Adrian Pietrzak
  */
 
 #ifndef INC_BUTTON_H_
@@ -13,6 +13,9 @@
 #define BTN_DEFAULT_INIT 1
 #define BTN_FORCE_NON_HAL 1
 
+#define	BTN_DEFAULT_TIME_DEBOUNCE 50
+#define	BTN_DEFAULT_TIME_LONG_PRESS 500
+#define	BTN_DEFAULT_TIME_REPEAT 300
 
 typedef enum{
 	IDLE = 0,
@@ -32,8 +35,8 @@ typedef enum{
 
 typedef enum{
 	BTN_MULTIPLE_CLICK_OFF = 0,
-	NORMAL_MODE,
-	COMBINED_MODE
+	BTN_MULTIPLE_CLICK_NORMAL_MODE,
+	BTN_MULTIPLE_CLICK_COMBINED_MODE
 }MultipleClickMode_t;
 
 // Struct for buttons

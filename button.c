@@ -2,17 +2,13 @@
  * button.c
  *
  *  Created on: May 7, 2022
- *      Author: Adrian
+ *      Author: Adrian Pietrzak
  */
 
 #include "main.h"
 #include "button.h"
 
 #define BTN_LIB_TICK uwTick //Miliseconds timer 32-bit
-
-#define	DEFAULT_TIME_DEBOUNCE 50
-#define	DEFAULT_TIME_LONG_PRESS 500
-#define	DEFAULT_TIME_REPEAT 300
 
 #if BTN_FORCE_NON_HAL
 #undef USE_HAL_DRIVER
@@ -58,6 +54,10 @@ void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uin
 
 	Key->ReverseLogic = ReverseLogic;
 	Key->NumberBtn = Number;
+
+#if BTN_MULTIPLE_CLICK
+	Key->MultipleClickMode = BTN_MULTIPLE_CLICK_OFF;
+#endif
 }
 #if BTN_DEFAULT_INIT
 void ButtonInitKeyDefault(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin,
@@ -66,12 +66,16 @@ void ButtonInitKeyDefault(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioP
 	Key->State = IDLE;
 	Key->GpioPort = GpioPort;
 	Key->GpioPin = GpioPin;
-	Key->TimerDebounce = DEFAULT_TIME_DEBOUNCE;
-	Key->TimerLongPressed = DEFAULT_TIME_LONG_PRESS;
-	Key->TimerRepeat = DEFAULT_TIME_REPEAT;
+	Key->TimerDebounce = BTN_DEFAULT_TIME_DEBOUNCE;
+	Key->TimerLongPressed = BTN_DEFAULT_TIME_LONG_PRESS;
+	Key->TimerRepeat = BTN_DEFAULT_TIME_REPEAT;
 
 	Key->ReverseLogic = ReverseLogic;
 	Key->NumberBtn = Number;
+
+#if BTN_MULTIPLE_CLICK
+	Key->MultipleClickMode = BTN_MULTIPLE_CLICK_OFF;
+#endif
 }
 #endif
 
@@ -88,7 +92,7 @@ static void MultipleClickDebounce(button_t * Key)
 		}
 		return;
 	}
-	else if(Key->MultipleClickMode == NORMAL_MODE)
+	else if(Key->MultipleClickMode == BTN_MULTIPLE_CLICK_NORMAL_MODE)
 	{
 //		Key->State = PRESSED;
 		Key->LastTick = BTN_LIB_TICK;
@@ -118,7 +122,7 @@ static void MultipleClickDebounce(button_t * Key)
 		}
 		else Key->ClickCounter = 0;
 	}
-	else if(Key->MultipleClickMode == COMBINED_MODE && Key->ClickCounterCycle == 0)
+	else if(Key->MultipleClickMode == BTN_MULTIPLE_CLICK_COMBINED_MODE && Key->ClickCounterCycle == 0)
 	{
 		Key->ClickCounterCycle = 1;
 		if(BTN_LIB_TICK - Key->LastClickTick <= Key->TimerBetweenClick)
@@ -137,7 +141,7 @@ static void MultipleClickDebounce(button_t * Key)
 
 static void multipleClikIdle(button_t * Key)
 {
-	if(Key->MultipleClickMode != COMBINED_MODE) return;
+	if(Key->MultipleClickMode != BTN_MULTIPLE_CLICK_COMBINED_MODE) return;
 	Key->CombinedModeRepeatPressEx = 0;
 	Key->ClickCounterCycle = 0;
 	if(BTN_LIB_TICK - Key->LastClickTick > Key->TimerBetweenClick)
