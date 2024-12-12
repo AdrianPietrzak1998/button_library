@@ -41,9 +41,39 @@ To use the button library in your project, follow these steps:
    ButtonTask(&myButton);
    ```
 
+## Callback Functions
+
+The library provides several callback functions that you can define in your application to handle button events. One of the most important callback functions is `ButtonPressed`, which is triggered when the button is pressed. This callback is passed the button number (`uint16_t`), which allows you to distinguish between different buttons if you are managing multiple buttons.
+
+### Example Callback Function: `ButtonPressed`
+
+Here’s an example of how to define a callback function for the `ButtonPressed` event, using the button number to differentiate between multiple buttons:
+
+```c
+void ButtonPressedCallback(uint16_t ButtonNumber)
+{
+    switch(ButtonNumber)
+    {
+        case 1:
+            // Handle button 1 press
+            break;
+        case 2:
+            // Handle button 2 press
+            break;
+        case 3:
+            // Handle button 3 press
+            break;
+        default:
+            // Handle default case
+            break;
+    }
+}
+```
+
 ## Multiple Click Modes
 
 ### 1. **Normal Mode** (`BTN_MULTIPLE_CLICK_NORMAL_MODE`)
+
 In this mode, the library tracks how many clicks occur within a short period (defined by `TimerBetweenClick`). If two clicks occur within this time, a `double-click` callback is triggered. Similarly, three clicks within the same time window trigger a `triple-click` callback.
 
 **How it works**:
@@ -51,12 +81,27 @@ In this mode, the library tracks how many clicks occur within a short period (de
 - If two clicks are detected, the `ButtonDoubleClick` callback is called.
 - If three clicks are detected, the `ButtonTripleClick` callback is called.
 
+**Important Considerations**:
+- **Multiple Callback Triggers**: In **Normal Mode**, additional callbacks may be triggered:
+  - For a **double-click**, besides triggering the `ButtonDoubleClick` callback, the `ButtonPressed` callback will be called twice (once for each press) and the `ButtonRelease` callback will be called twice (once for each release).
+  - For a **triple-click**, the `ButtonPressed` and `ButtonRelease` callbacks will be called three times each, and additionally, the `ButtonDoubleClick` and `ButtonTripleClick` callbacks will be triggered once each.
+
+This behavior results from the fact that **Normal Mode** processes each individual click within the specified time, leading to multiple callback invocations for each press and release in a sequence.
+
 ### 2. **Combined Mode** (`BTN_MULTIPLE_CLICK_COMBINED_MODE`)
+
 In this mode, the button can handle multiple clicks in a more advanced way, allowing for mixed presses. For example, a click can be combined with a long press, and multiple short presses can trigger different actions.
 
+**How it works**:
+- The library tracks clicks as they occur within a specified time (`TimerBetweenClick`).
+- However, the callbacks are triggered only after all clicks in the sequence have been detected, with an added delay corresponding to the maximum time between clicks.
+
 **Important Considerations**:
-- **Additional Delay**: In combined mode, there is an additional delay due to the combined press detection. This can introduce some latency, which means the release callback may be triggered **before** the press callback in certain cases.
-- **Callback Order**: Because of the delay in combined mode, you might see the release callback being triggered before the press callback, so ensure your callbacks can handle this order.
+- **Additional Delay**: In combined mode, the callbacks are triggered after all clicks are detected, with the delay increased by the maximum time set in `TimerBetweenClick`. This introduces a latency before the callback is invoked.
+- **Callback Order**: Due to this added delay, in **Combined Mode**, the callbacks will be invoked in the exact order as the clicks occurred, without overlap. The `ButtonPressed` callback will only be triggered once for each click, and the release callback (`ButtonRelease`) will also occur after the final click.
+
+**Behavior**:
+- Unlike **Normal Mode**, the callbacks in **Combined Mode** are delayed, ensuring that only the appropriate callback is triggered for each click, without duplicates.
 
 ### Example:
 ```c
@@ -68,102 +113,57 @@ ButtonRegisterDoubleClickCallback(&myButton, myDoubleClickCallback);
 ButtonRegisterTripleClickCallback(&myButton, myTripleClickCallback);
 ```
 
-## Function List and Usage
+## Configuration Macros for Button Functionality
 
-### 1. **ButtonInitKeyDefault**
-```c
-void ButtonInitKeyDefault(button_t *Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, ReverseLogicGpio_t ReverseLogic, uint16_t Number);
-```
-- Initializes the button structure with default settings.
-- Parameters:
-  - `Key`: Pointer to the `button_t` structure.
-  - `GpioPort`: GPIO port to which the button is connected.
-  - `GpioPin`: GPIO pin number.
-  - `ReverseLogic`: Logic level for button press (use `NON_REVERSE` or `REVERSE`).
-  - `Number`: The button number (used to identify the button).
+These macros control various features of the button functionality, such as enabling multiple click detection, long press handling, debounce timing, and more. You can modify these macros to customize the behavior of the button library according to your needs.
 
-### 2. **ButtonSetDebounceTime**
-```c
-void ButtonSetDebounceTime(button_t *Key, uint32_t Miliseconds);
-```
-- Sets the debounce time for the button.
-- Parameters:
-  - `Key`: Pointer to the button structure.
-  - `Miliseconds`: Debounce time in milliseconds.
+### 1. **BTN_RELEASE_AFTER_REPEAT**
+- **Description**: Enables or disables the "release after repeat" functionality for the button.
+  - **When Enabled**: If set to `1`, the button will trigger a release event after the repeat action.
+  - **When Disabled**: If set to `0`, the release event won't be triggered until the button is released from the repeat state.
+  - **Use Case**: This option is useful if you want to distinguish between a normal button release and a release that follows a repeat action.
 
-### 3. **ButtonSetLongPressedTime**
-```c
-void ButtonSetLongPressedTime(button_t *Key, uint32_t Miliseconds);
-```
-- Sets the long press time for the button.
-- Parameters:
-  - `Key`: Pointer to the button structure.
-  - `Miliseconds`: Long press time in milliseconds.
+---
 
-### 4. **ButtonSetRepeatTime**
-```c
-void ButtonSetRepeatTime(button_t *Key, uint32_t Miliseconds);
-```
-- Sets the repeat time for the button press.
-- Parameters:
-  - `Key`: Pointer to the button structure.
-  - `Miliseconds`: Repeat time in milliseconds.
+### 2. **BTN_MULTIPLE_CLICK**
+- **Description**: Enables or disables multiple click detection functionality.
+  - **When Enabled**: If set to `1`, the button will handle multiple clicks within a specified time.
+  - **When Disabled**: If set to `0`, the library will ignore multiple clicks, reducing code size and improving performance.
+  - **Use Case**: If you don’t need to track multiple clicks (e.g., double-click or triple-click detection), disable this option to optimize memory usage and processing speed.
 
-### 5. **ButtonRegisterPressCallback**
-```c
-void ButtonRegisterPressCallback(button_t *Key, void *Callback);
-```
-- Registers a callback for the button press event.
-- Parameters:
-  - `Key`: Pointer to the button structure.
-  - `Callback`: Function to be called when the button is pressed.
+---
 
-### 6. **ButtonRegisterLongPressedCallback**
-```c
-void ButtonRegisterLongPressedCallback(button_t *Key, void *Callback);
-```
-- Registers a callback for the long press event.
-- Parameters:
-  - `Key`: Pointer to the button structure.
-  - `Callback`: Function to be called when the button is long pressed.
+### 3. **BTN_MULTIPLE_CLICK_COMBINED_TO_MUCH_AS_TRIPLE**
+- **Description**: Defines the behavior when there are too many clicks in combined mode.
+  - **When Enabled**: If set to `1`, multiple clicks beyond triple will be treated as a triple click.
+  - **Use Case**: This is helpful to limit the number of clicks detected, avoiding errors when there are too many consecutive presses in combined mode.
 
-### 7. **ButtonRegisterRepeatCallback**
-```c
-void ButtonRegisterRepeatCallback(button_t *Key, void *Callback);
-```
-- Registers a callback for the repeat event.
-- Parameters:
-  - `Key`: Pointer to the button structure.
-  - `Callback`: Function to be called when the button is repeated.
+---
 
-### 8. **ButtonRegisterReleaseCallback**
-```c
-void ButtonRegisterReleaseCallback(button_t *Key, void *Callback);
-```
-- Registers a callback for the release event.
-- Parameters:
-  - `Key`: Pointer to the button structure.
-  - `Callback`: Function to be called when the button is released.
+### 4. **BTN_DEFAULT_INIT**
+- **Description**: Enables or disables the use of default initialization values for button configuration.
+  - **When Enabled**: If set to `1`, the library will use the default time values for debounce, long press, and repeat (see below).
+  - **When Disabled**: If set to `0`, you must manually configure the debounce, long press, and repeat times.
+  - **Use Case**: Enable this option if you want to use standard values for these parameters without needing to manually configure them.
 
-### 9. **ButtonRegisterReleaseAfterRepeatCallback**
-```c
-void ButtonRegisterReleaseAfterRepeatCallback(button_t *Key, void *Callback);
-```
-- Registers a callback for the release after repeat event.
-- Parameters:
-  - `Key`: Pointer to the button structure.
-  - `Callback`: Function to be called when the button is released after repeat.
+---
 
-### 10. **ButtonSetMultipleClick**
-```c
-void ButtonSetMultipleClick(button_t *Key, MultipleClickMode_t MultipleClickMode, uint32_t TimerBetweenClick);
-```
-- Sets the multiple click mode for the button.
-- Parameters:
-  - `Key`: Pointer to the button structure.
-  - `MultipleClickMode`: Mode for multiple clicks (`BTN_MULTIPLE_CLICK_NORMAL_MODE`, `BTN_MULTIPLE_CLICK_COMBINED_MODE`).
-  - `TimerBetweenClick`: Time in milliseconds between clicks.
+### 5. **BTN_FORCE_NON_HAL**
+- **Description**: Forces the use of non-HAL GPIO drivers (direct register access).
+  - **When Enabled**: If set to `1`, the library will bypass the HAL (Hardware Abstraction Layer) and use direct register access for GPIO operations.
+  - **When Disabled**: If set to `0`, the library will use the HAL GPIO functions, which may be more portable but less efficient.
+  - **Use Case**: Enable this option if you want to improve performance by avoiding the overhead of HAL and directly accessing the GPIO registers.
 
-## Conclusion
-This library offers flexible and easy-to-use functions for managing button input in embedded systems. With support for multiple click modes, debouncing, long press detection, and repeat functionality, it is well-suited for a wide range of applications.
+---
+
+## Default Time Configurations (Used if `BTN_DEFAULT_INIT` is enabled)
+
+When `BTN_DEFAULT_INIT` is enabled, the following default times are used for button press actions. You can modify these values to adjust the timing behavior of the button.
+
+### 1. **BTN_DEFAULT_TIME_DEBOUNCE**
+- **Description**: Defines the debounce time in milliseconds.
+### 2. **BTN_DEFAULT_TIME_LONG_PRESS**
+- **Description**: Defines the long press time in milliseconds.
+### 3. **BTN_DEFAULT_TIME_REPEAT**
+- **Description**: Defines the repeat time in milliseconds.
 
