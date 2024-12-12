@@ -43,6 +43,38 @@ static uint8_t ReadState(const GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
 #endif
 }
 
+
+
+//Button init
+void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uint32_t TimerDebounce,
+			uint32_t TimerLongPressed, uint32_t TimerRepeat, ReverseLogicGpio_t ReverseLogic, uint16_t Number)
+{
+	Key->State = IDLE;
+	Key->GpioPort = GpioPort;
+	Key->GpioPin = GpioPin;
+	Key->TimerDebounce = TimerDebounce;
+	Key->TimerLongPressed = TimerLongPressed;
+	Key->TimerRepeat = TimerRepeat;
+
+	Key->ReverseLogic = ReverseLogic;
+	Key->NumberBtn = Number;
+}
+#if BTN_DEFAULT_INIT
+void ButtonInitKeyDefault(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin,
+		ReverseLogicGpio_t ReverseLogic, uint16_t Number)
+{
+	Key->State = IDLE;
+	Key->GpioPort = GpioPort;
+	Key->GpioPin = GpioPin;
+	Key->TimerDebounce = DEFAULT_TIME_DEBOUNCE;
+	Key->TimerLongPressed = DEFAULT_TIME_LONG_PRESS;
+	Key->TimerRepeat = DEFAULT_TIME_REPEAT;
+
+	Key->ReverseLogic = ReverseLogic;
+	Key->NumberBtn = Number;
+}
+#endif
+
 #if BTN_MULTIPLE_CLICK
 static void MultipleClickDebounce(button_t * Key)
 {
@@ -139,35 +171,139 @@ static void multipleClikRepeat(button_t * Key)
 }
 #endif
 
-//Button init
-void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uint32_t TimerDebounce,
-			uint32_t TimerLongPressed, uint32_t TimerRepeat, ReverseLogicGpio_t ReverseLogic, uint16_t Number)
-{
-	Key->State = IDLE;
-	Key->GpioPort = GpioPort;
-	Key->GpioPin = GpioPin;
-	Key->TimerDebounce = TimerDebounce;
-	Key->TimerLongPressed = TimerLongPressed;
-	Key->TimerRepeat = TimerRepeat;
 
-	Key->ReverseLogic = ReverseLogic;
-	Key->NumberBtn = Number;
+//States routine
+static void ButtonIdleRoutine(button_t *Key)
+{
+#if BTN_MULTIPLE_CLICK
+	multipleClikIdle(Key);
+#endif
+	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_RESET:BTN_SET)
+	{
+		Key->LastTick = BTN_LIB_TICK;
+		Key->State = DEBOUNCE;
+	}
 }
-#if BTN_DEFAULT_INIT
-void ButtonInitKeyDefault(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin,
-		ReverseLogicGpio_t ReverseLogic, uint16_t Number)
-{
-	Key->State = IDLE;
-	Key->GpioPort = GpioPort;
-	Key->GpioPin = GpioPin;
-	Key->TimerDebounce = DEFAULT_TIME_DEBOUNCE;
-	Key->TimerLongPressed = DEFAULT_TIME_LONG_PRESS;
-	Key->TimerRepeat = DEFAULT_TIME_REPEAT;
 
-	Key->ReverseLogic = ReverseLogic;
-	Key->NumberBtn = Number;
+static void ButtonDebounceRoutine(button_t *Key)
+{
+	if((BTN_LIB_TICK - Key->LastTick) >= Key->TimerDebounce)
+	{
+		if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_RESET:BTN_SET)
+		{
+
+#if BTN_MULTIPLE_CLICK
+			MultipleClickDebounce(Key);
+			Key->State = PRESSED;
+			Key->LastClickTick = BTN_LIB_TICK;
+#else
+			Key->State = PRESSED;
+			Key->LastTick = BTN_LIB_TICK;
+			if(Key->ButtonPressed != NULL)
+			{
+				Key->ButtonPressed(Key->NumberBtn);
+			}
+#endif
+		}
+		else
+		{
+			Key->State = IDLE;
+		}
+	}
+}
+
+static void ButtonPressedRoutine(button_t *Key)
+{
+	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
+	{
+		Key->State = RELEASE;
+	}
+	else if(BTN_LIB_TICK - Key->LastTick >= Key->TimerLongPressed)
+	{
+		Key->State = REPEAT;
+		Key->LastTick = BTN_LIB_TICK;
+		if(Key->ButtonLongPressed != NULL)
+		{
+			Key->ButtonLongPressed(Key->NumberBtn);
+		}
+	}
+}
+
+static void ButtonRepeatRoutine(button_t *Key)
+{
+#if BTN_MULTIPLE_CLICK
+	multipleClikRepeat(Key);
+#endif
+	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
+	{
+#if !BTN_RELEASE_AFTER_REPEAT
+		Key->State = RELEASE;
+#else
+		Key->State = RELEASE_AFTER_REPEAT;
+#endif
+	}
+	else if(BTN_LIB_TICK - Key->LastTick >= Key->TimerRepeat)
+	{
+		Key->LastTick = BTN_LIB_TICK;
+		if(Key->ButtonRepeat != NULL)
+		{
+			Key->ButtonRepeat(Key->NumberBtn);
+		}
+	}
+}
+
+static void ButtonReleaseRoutine(button_t *Key)
+{
+	if(Key->ButtonRelease != NULL)
+	{
+		Key->ButtonRelease(Key->NumberBtn);
+	}
+	Key->State = IDLE;
+}
+#if BTN_RELEASE_AFTER_REPEAT
+static void ButtonReleaseAfterRepeatRoutine(button_t *Key)
+{
+	if(Key->ButtonReleaseAfterRepeat != NULL)
+	{
+		Key->ButtonReleaseAfterRepeat(Key->NumberBtn);
+	}
+	Key->State = IDLE;
 }
 #endif
+
+//State machines
+void ButtonTask(button_t *Key)
+{
+	switch(Key->State)
+	{
+	case IDLE:
+		ButtonIdleRoutine(Key);
+		break;
+
+	case DEBOUNCE:
+		ButtonDebounceRoutine(Key);
+		break;
+
+	case PRESSED:
+		ButtonPressedRoutine(Key);
+		break;
+
+	case REPEAT:
+		ButtonRepeatRoutine(Key);
+		break;
+
+	case RELEASE:
+		ButtonReleaseRoutine(Key);
+		break;
+
+#if BTN_RELEASE_AFTER_REPEAT
+	case RELEASE_AFTER_REPEAT:
+		ButtonReleaseAfterRepeatRoutine(Key);
+		break;
+#endif
+	}
+}
+
 //Time settings function
 void ButtonSetDebounceTime(button_t * Key, uint32_t Miliseconds)
 {
@@ -221,137 +357,7 @@ void ButtonRegisterTripleClickCallback(button_t *Key, void *Callback)
 	Key->ButtonTripleClick = Callback;
 }
 #endif
-//States routine
-void ButtonIdleRoutine(button_t *Key)
-{
-#if BTN_MULTIPLE_CLICK
-	multipleClikIdle(Key);
-#endif
-	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_RESET:BTN_SET)
-	{
-		Key->LastTick = BTN_LIB_TICK;
-		Key->State = DEBOUNCE;
-	}
-}
 
-void ButtonDebounceRoutine(button_t *Key)
-{
-	if((BTN_LIB_TICK - Key->LastTick) >= Key->TimerDebounce)
-	{
-		if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_RESET:BTN_SET)
-		{
-
-#if BTN_MULTIPLE_CLICK
-			MultipleClickDebounce(Key);
-			Key->State = PRESSED;
-			Key->LastClickTick = BTN_LIB_TICK;
-#else
-			Key->State = PRESSED;
-			Key->LastTick = BTN_LIB_TICK;
-			if(Key->ButtonPressed != NULL)
-			{
-				Key->ButtonPressed(Key->NumberBtn);
-			}
-#endif
-		}
-		else
-		{
-			Key->State = IDLE;
-		}
-	}
-}
-
-void ButtonPressedRoutine(button_t *Key)
-{
-	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
-	{
-		Key->State = RELEASE;
-	}
-	else if(BTN_LIB_TICK - Key->LastTick >= Key->TimerLongPressed)
-	{
-		Key->State = REPEAT;
-		Key->LastTick = BTN_LIB_TICK;
-		if(Key->ButtonLongPressed != NULL)
-		{
-			Key->ButtonLongPressed(Key->NumberBtn);
-		}
-	}
-}
-
-void ButtonRepeatRoutine(button_t *Key)
-{
-#if BTN_MULTIPLE_CLICK
-	multipleClikRepeat(Key);
-#endif
-	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
-	{
-#if !BTN_RELEASE_AFTER_REPEAT
-		Key->State = RELEASE;
-#else
-		Key->State = RELEASE_AFTER_REPEAT;
-#endif
-	}
-	else if(BTN_LIB_TICK - Key->LastTick >= Key->TimerRepeat)
-	{
-		Key->LastTick = BTN_LIB_TICK;
-		if(Key->ButtonRepeat != NULL)
-		{
-			Key->ButtonRepeat(Key->NumberBtn);
-		}
-	}
-}
-
-void ButtonReleaseRoutine(button_t *Key)
-{
-	if(Key->ButtonRelease != NULL)
-	{
-		Key->ButtonRelease(Key->NumberBtn);
-	}
-	Key->State = IDLE;
-}
-#if BTN_RELEASE_AFTER_REPEAT
-void ButtonReleaseAfterRepeatRoutine(button_t *Key)
-{
-	if(Key->ButtonReleaseAfterRepeat != NULL)
-	{
-		Key->ButtonReleaseAfterRepeat(Key->NumberBtn);
-	}
-	Key->State = IDLE;
-}
-#endif
-
-//State machines
-void ButtonTask(button_t *Key)
-{
-	switch(Key->State)
-	{
-	case IDLE:
-		ButtonIdleRoutine(Key);
-		break;
-
-	case DEBOUNCE:
-		ButtonDebounceRoutine(Key);
-		break;
-
-	case PRESSED:
-		ButtonPressedRoutine(Key);
-		break;
-
-	case REPEAT:
-		ButtonRepeatRoutine(Key);
-		break;
-
-	case RELEASE:
-		ButtonReleaseRoutine(Key);
-		break;
-
-#if BTN_RELEASE_AFTER_REPEAT
-	case RELEASE_AFTER_REPEAT:
-		ButtonReleaseAfterRepeatRoutine(Key);
-		break;
-#endif
-	}
-}
 
 #ifdef HAL_TO_DEFINE
 #define USE_HAL_DRIVER
