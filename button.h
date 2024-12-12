@@ -8,10 +8,10 @@
 #ifndef INC_BUTTON_H_
 #define INC_BUTTON_H_
 
-// States of state machine
-#define RELEASE_AFTER_REPEAT_EN 1
-#define MULTIPLE_CLICK 1
-
+#define BTN_RELEASE_AFTER_REPEAT 1
+#define BTN_MULTIPLE_CLICK 1
+#define BTN_DEFAULT_INIT 1
+#define BTN_FORCE_NON_HAL 1
 
 
 typedef enum{
@@ -20,7 +20,7 @@ typedef enum{
 	PRESSED,
 	REPEAT,
 	RELEASE
-#if RELEASE_AFTER_REPEAT_EN
+#if BTN_RELEASE_AFTER_REPEAT
 	,RELEASE_AFTER_REPEAT
 #endif
 } BUTTON_STATE;
@@ -31,7 +31,7 @@ typedef enum{
 }ReverseLogicGpio_t;
 
 typedef enum{
-	MULTIPLE_CLICK_OFF = 0,
+	BTN_MULTIPLE_CLICK_OFF = 0,
 	NORMAL_MODE,
 	COMBINED_MODE
 }MultipleClickMode_t;
@@ -56,10 +56,10 @@ typedef struct
 	void(*ButtonLongPressed)(uint16_t);
 	void(*ButtonRepeat)(uint16_t);
 	void(*ButtonRelease)(uint16_t);
-#if RELEASE_AFTER_REPEAT_EN
+#if BTN_RELEASE_AFTER_REPEAT
 	void(*ButtonReleaseAfterRepeat)(uint16_t);
 #endif
-#if MULTIPLE_CLICK
+#if BTN_MULTIPLE_CLICK
 	void(*ButtonDoubleClick)(uint16_t);
 	void(*ButtonTripleClick)(uint16_t);
 
@@ -76,7 +76,10 @@ typedef struct
 // Public function
 void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uint32_t TimerDebounce, uint32_t TimerLongPressed,
 					uint32_t TimerRepeat, ReverseLogicGpio_t ReverseLogic, uint16_t Number); // Initialization for state machine
-#if MULTIPLE_CLICK
+#if BTN_DEFAULT_INIT
+void ButtonInitKeyDefault(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, ReverseLogicGpio_t ReverseLogic, uint16_t Number);
+#endif
+#if BTN_MULTIPLE_CLICK
 void ButtonSetMultipleClick(button_t * Key, MultipleClickMode_t MultipleClickMode, uint32_t TimerBetweenClick);
 #endif
 void ButtonTask(button_t *Key); //Task for working state machine
@@ -86,10 +89,10 @@ void ButtonRegisterPressCallback(button_t *Key, void *Callback); //For first pre
 void ButtonRegisterLongPressedCallback(button_t *Key, void *Callback); //If key was long pressed
 void ButtonRegisterRepeatCallback(button_t *Key, void *Callback); //While key is long pressed
 void ButtonRegisterReleaseCallback(button_t *Key, void *Callback); //If key was released
-#if RELEASE_AFTER_REPEAT_EN
+#if BTN_RELEASE_AFTER_REPEAT
 void ButtonRegisterReleaseAfterRepeatCallback(button_t *Key, void *Callback);
 #endif
-#if MULTIPLE_CLICK
+#if BTN_MULTIPLE_CLICK
 void ButtonRegisterDoubleClickCallback(button_t *Key, void *Callback);
 void ButtonRegisterTripleClickCallback(button_t *Key, void *Callback);
 #endif
