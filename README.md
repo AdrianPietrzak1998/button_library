@@ -159,8 +159,7 @@ These macros control various features of the button functionality, such as enabl
 
 ## Default Time Configurations (Used if `BTN_DEFAULT_INIT` is enabled)
 
-When `BTN_DEFAULT_INIT` is enabled, the following default times are used for button press actions. You can modify these values to adjust the timing behavior of the button.
-
+When `BTN_DEFAULT_INIT` is enabled, the following default times are used for button press actions during initialization with `ButtonInitKeyDefault`:
 ### 1. **BTN_DEFAULT_TIME_DEBOUNCE**
 - **Description**: Defines the debounce time in milliseconds.
 ### 2. **BTN_DEFAULT_TIME_LONG_PRESS**

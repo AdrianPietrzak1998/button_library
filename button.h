@@ -40,7 +40,8 @@
 /**
  * @def BTN_DEFAULT_INIT
  * @brief Enables or disables the use of default button initialization values.
- * If set to 1, the default time values for debounce, long press, and repeat will be used.
+ * If set to 1, the default values for debounce, long press, and repeat will be used in
+ * the ButtonInitKeyDefault initialization function.
  */
 #define BTN_DEFAULT_INIT 1
 
