@@ -18,8 +18,8 @@
 
 /**
  * @def BTN_RELEASE_AFTER_REPEAT
- * @brief Enables or disables the release after repeat functionality for the button.
- * If set to 1, the button will trigger a release event after the repeat action.
+ * @brief Enables or disables the release after repeat state for the button.
+ * If set to 1, the button will trigger a release_after_repeat event after the repeat action.
  */
 #define BTN_RELEASE_AFTER_REPEAT 1
 

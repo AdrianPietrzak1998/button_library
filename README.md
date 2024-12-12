@@ -119,9 +119,9 @@ These macros control various features of the button functionality, such as enabl
 
 ### 1. **BTN_RELEASE_AFTER_REPEAT**
 - **Description**: Enables or disables the "release after repeat" functionality for the button.
-  - **When Enabled**: If set to `1`, the button will trigger a release event after the repeat action.
-  - **When Disabled**: If set to `0`, the release event won't be triggered until the button is released from the repeat state.
-  - **Use Case**: This option is useful if you want to distinguish between a normal button release and a release that follows a repeat action.
+  - **When Enabled**: If set to `1`, the button will trigger a different release callback after a long press compared to a short press. This means that the release callback will be different depending on whether the button was held for a long press or just briefly pressed.
+  - **When Disabled**: If set to `0`, the same release callback will be triggered for both short and long presses when the button is released, regardless of how long it was held.
+  - **Use Case**: This option is useful when you want to differentiate between the release of a short press and a long press, allowing for more specific behavior based on the duration of the press.
 
 ---
 
@@ -135,16 +135,17 @@ These macros control various features of the button functionality, such as enabl
 
 ### 3. **BTN_MULTIPLE_CLICK_COMBINED_TO_MUCH_AS_TRIPLE**
 - **Description**: Defines the behavior when there are too many clicks in combined mode.
-  - **When Enabled**: If set to `1`, multiple clicks beyond triple will be treated as a triple click.
-  - **Use Case**: This is helpful to limit the number of clicks detected, avoiding errors when there are too many consecutive presses in combined mode.
+  - **When Enabled**: If set to `1`, any clicks beyond the third click will be ignored.
+  - **When Disabled**: If set to `0`, the click count will reset to zero after the third click, and the counting will start again.
+  - **Use Case**: This option helps control how clicks are counted in combined mode, either by limiting the number of clicks or by restarting the count after too many presses.
 
 ---
 
 ### 4. **BTN_DEFAULT_INIT**
 - **Description**: Enables or disables the use of default initialization values for button configuration.
-  - **When Enabled**: If set to `1`, the library will use the default time values for debounce, long press, and repeat (see below).
-  - **When Disabled**: If set to `0`, you must manually configure the debounce, long press, and repeat times.
-  - **Use Case**: Enable this option if you want to use standard values for these parameters without needing to manually configure them.
+  - **When Enabled**: If set to `1`, the library provides a simpler initialization function that assigns default time values for debounce, long press, and repeat. These default values can be changed later.
+  - **When Disabled**: If set to `0`, you must manually configure the debounce, long press, and repeat times using the appropriate functions.
+  - **Use Case**: Enable this option if you want to simplify button initialization by using predefined time values for debounce, long press, and repeat, without needing to manually set them. However, you still have the ability to change these values as needed. The full initialization function remains available at all times for more advanced configurations.
 
 ---
 
