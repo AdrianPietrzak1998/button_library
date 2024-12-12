@@ -84,7 +84,6 @@ static void MultipleClickDebounce(button_t * Key)
 {
 	if(Key->MultipleClickMode == BTN_MULTIPLE_CLICK_OFF)
 	{
-//		Key->State = PRESSED;
 		Key->LastTick = BTN_LIB_TICK;
 		if(Key->ButtonPressed != NULL)
 		{
@@ -94,7 +93,6 @@ static void MultipleClickDebounce(button_t * Key)
 	}
 	else if(Key->MultipleClickMode == BTN_MULTIPLE_CLICK_NORMAL_MODE)
 	{
-//		Key->State = PRESSED;
 		Key->LastTick = BTN_LIB_TICK;
 		if(Key->ButtonPressed != NULL)
 		{
@@ -130,8 +128,11 @@ static void MultipleClickDebounce(button_t * Key)
 			Key->ClickCounter++;
 			if(Key->ClickCounter > 3)
 			{
+#if BTN_MULTIPLE_CLICK_COMBINED_TO_MUCH_AS_TRIPLE
+				Key->ClickCounter = 3;
+#else
 				Key->ClickCounter = 0;
-				return;
+#endif
 			}
 		}
 		else Key->ClickCounter = 1;
