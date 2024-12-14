@@ -102,6 +102,10 @@ typedef struct
     uint32_t            TimerBetweenClick; /**< Time between multiple clicks. */
     uint32_t            LastClickTick;     /**< Timestamp of the last click event. */
 #endif
+#if BTN_NON_USED_CALLBACK
+    BTN_TIMER_T			TimerNonUsed;
+    void(*ButtonNonUsed)(uint16_t);
+#endif
 } button_t;
 
 
@@ -151,6 +155,24 @@ void ButtonInitKeyDefault(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioP
   * @retval None
   */
 void ButtonSetMultipleClick(button_t * Key, MultipleClickMode_t MultipleClickMode, uint32_t TimerBetweenClick);
+#endif
+
+#if BTN_NON_USED_CALLBACK
+/**
+ * @brief Configures the non-used (idle) behavior for a button.
+ *
+ * This function sets the duration of inactivity (in milliseconds) required to trigger the
+ * non-used callback for a specific button. It also assigns the callback function to be called
+ * when the button is considered unused.
+ *
+ * @param Key Pointer to the button instance.
+ * @param Miliseconds Time in milliseconds after which the button is considered non-used.
+ *                    If set to 0, the non-used functionality is disabled for this button.
+ * @param Callback Pointer to the function to be executed when the button is unused.
+ *
+ * @note This feature is available only if `BTN_NON_USED_CALLBACK` is set to 1.
+ */
+void ButtonSetNonUsed(button_t * Key, BTN_TIMER_T Miliseconds, void *Callback);
 #endif
 
 /* =================================== State machine ================================== */

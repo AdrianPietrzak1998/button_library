@@ -165,6 +165,14 @@ These macros control various features of the button functionality, such as enabl
 
 ---
 
+### 7. **BTN_NON_USED_CALLBACK**
+- **Description**: Enables or disables the "non-used" (idle) callback functionality for buttons.
+  - **When Enabled**: If set to `1`, the library allows you to configure a callback that will be triggered when the button remains unused (idle) for a specified duration.
+  - **When Disabled**: If set to `0`, the non-used (idle) callback functionality is not available, and related code is excluded to save memory and processing overhead.
+  - **Use Case**: This option is useful for detecting inactivity of a button, such as entering a low-power mode, triggering a timeout action, or resetting an interface after a period of no user input.
+
+---
+
 ## Default Time Configurations (Used if `BTN_DEFAULT_INIT` is enabled)
 
 When `BTN_DEFAULT_INIT` is enabled, the following default times are used for button press actions during initialization with `ButtonInitKeyDefault`:

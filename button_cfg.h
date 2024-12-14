@@ -64,6 +64,19 @@
  */
 #define BTN_FORCE_NON_HAL 1
 
+/**
+ * @def BTN_NON_USED_CALLBACK
+ * @brief Enables or disables the callback for unused button events.
+ *
+ * When this macro is set to 1, the library allows handling a special callback for buttons that are
+ * not being actively used (e.g., pressed or released) for a certain period. This can be helpful for
+ * implementing idle behavior or timeout functionality in the application.
+ *
+ * If set to 0, the library does not trigger any callback for unused button states, saving processing
+ * time and memory for projects where such functionality is not required.
+ */
+#define BTN_NON_USED_CALLBACK 1
+
 #if BTN_DEFAULT_INIT
 /**
  * @def BTN_DEFAULT_TIME_DEBOUNCE

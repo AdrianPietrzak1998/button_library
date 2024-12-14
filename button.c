@@ -247,6 +247,10 @@ void ButtonInitKey(button_t * Key, BTN_GPIO_PORT_T *GpioPort, BTN_GPIO_PIN_T Gpi
 #if BTN_MULTIPLE_CLICK
 	Key->MultipleClickMode = BTN_MULTIPLE_CLICK_OFF;
 #endif
+
+#if BTN_NON_USED_CALLBACK
+	Key->TimerNonUsed = 0;
+#endif
 }
 
 #if BTN_DEFAULT_INIT
@@ -290,6 +294,10 @@ void ButtonInitKeyDefault(button_t * Key, BTN_GPIO_PORT_T *GpioPort, BTN_GPIO_PI
 #if BTN_MULTIPLE_CLICK
 	Key->MultipleClickMode = BTN_MULTIPLE_CLICK_OFF;
 #endif
+
+#if BTN_NON_USED_CALLBACK
+	Key->TimerNonUsed = 0;
+#endif
 }
 #endif
 
@@ -312,6 +320,27 @@ void ButtonSetMultipleClick(button_t * Key, MultipleClickMode_t MultipleClickMod
 }
 #endif
 
+#if BTN_NON_USED_CALLBACK
+/**
+ * @brief Configures the non-used (idle) behavior for a button.
+ *
+ * This function sets the time threshold for considering a button as unused and assigns a
+ * callback function to be executed when the button remains idle for the specified duration.
+ *
+ * @param Key Pointer to the button instance.
+ * @param Miliseconds Time in milliseconds after which the button is considered non-used.
+ *                    If set to 0, the non-used functionality is disabled for this button.
+ * @param Callback Pointer to the function to be executed when the button is unused.
+ *
+ * @note Ensure that the `BTN_NON_USED_CALLBACK` macro is enabled in the library configuration
+ *       to use this functionality.
+ */
+void ButtonSetNonUsed(button_t * Key, BTN_TIMER_T Miliseconds, void *Callback)
+{
+	Key->TimerNonUsed = Miliseconds;
+	Key->ButtonNonUsed = Callback;
+}
+#endif
 
 
 
@@ -344,6 +373,13 @@ static void ButtonIdleRoutine(button_t *Key)
 		Key->LastTick = BTN_LIB_TICK;
 		Key->State = DEBOUNCE;
 	}
+#if BTN_NON_USED_CALLBACK
+	if(Key->TimerNonUsed && (BTN_LIB_TICK - Key->LastTick >= Key->TimerNonUsed))
+	{
+		Key->LastTick = BTN_LIB_TICK;
+		if(NULL != Key->ButtonNonUsed) Key->ButtonNonUsed(Key->NumberBtn);
+	}
+#endif
 }
 
 /**
