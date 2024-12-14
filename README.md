@@ -125,7 +125,15 @@ These macros control various features of the button functionality, such as enabl
 
 ---
 
-### 2. **BTN_MULTIPLE_CLICK**
+### 2. **BTN_DOUBLE_DEBOUNCING**  
+- **Description**: Enables or disables double debouncing for the button release state.  
+  - **When Enabled**: If set to `1`, an additional debounce mechanism is applied specifically to the release of the button. This ensures the stability of the button signal before transitioning to the release state. It helps to avoid false release detections caused by signal fluctuations or noise during the release phase.  
+  - **When Disabled**: If set to `0`, only a single debounce mechanism is applied to the press phase of the button, and the release state transitions immediately after detecting the button release.  
+  - **Use Case**: Enable this option if your application requires high accuracy for button release handling, especially in environments with significant electrical noise or mechanical bouncing during the release phase. Disable it to optimize performance and reduce memory usage if the additional stability is not required.  
+
+---
+
+### 3. **BTN_MULTIPLE_CLICK**
 - **Description**: Enables or disables multiple click detection functionality.
   - **When Enabled**: If set to `1`, the button will handle multiple clicks within a specified time.
   - **When Disabled**: If set to `0`, the library will ignore multiple clicks, reducing code size and improving performance.
@@ -133,7 +141,7 @@ These macros control various features of the button functionality, such as enabl
 
 ---
 
-### 3. **BTN_MULTIPLE_CLICK_COMBINED_TO_MUCH_AS_TRIPLE**
+### 4. **BTN_MULTIPLE_CLICK_COMBINED_TO_MUCH_AS_TRIPLE**
 - **Description**: Defines the behavior when there are too many clicks in combined mode.
   - **When Enabled**: If set to `1`, any clicks beyond the third click will be ignored.
   - **When Disabled**: If set to `0`, the click count will reset to zero after the third click, and the counting will start again.
@@ -141,7 +149,7 @@ These macros control various features of the button functionality, such as enabl
 
 ---
 
-### 4. **BTN_DEFAULT_INIT**
+### 5. **BTN_DEFAULT_INIT**
 - **Description**: Enables or disables the use of default initialization values for button configuration.
   - **When Enabled**: If set to `1`, the library provides a simpler initialization function that assigns default time values for debounce, long press, and repeat. These default values can be changed later.
   - **When Disabled**: If set to `0`, you must manually configure the debounce, long press, and repeat times using the appropriate functions.
@@ -149,7 +157,7 @@ These macros control various features of the button functionality, such as enabl
 
 ---
 
-### 5. **BTN_FORCE_NON_HAL**
+### 6. **BTN_FORCE_NON_HAL**
 - **Description**: Forces the use of non-HAL GPIO drivers (direct register access).
   - **When Enabled**: If set to `1`, the library will bypass the HAL (Hardware Abstraction Layer) and use direct register access for GPIO operations.
   - **When Disabled**: If set to `0`, the library will use the HAL GPIO functions, which may be more portable but less efficient.

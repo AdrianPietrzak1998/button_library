@@ -23,7 +23,16 @@
  */
 #define BTN_RELEASE_AFTER_REPEAT 1
 
-
+/**
+ * @def BTN_DOUBLE_DEBOUNCING
+ * @brief Enables or disables the debouncing for button release.
+ *
+ * If set to 1, the button will apply debouncing logic not only on press but also on release.
+ * This ensures that any mechanical bouncing or signal noise during the release of the button
+ * is filtered out, providing more stable and reliable button behavior.
+ *
+ * If set to 0, the debouncing will only be applied during the press event.
+ */
 #define BTN_DOUBLE_DEBOUNCING 1
 
 /**
@@ -141,19 +150,19 @@ typedef enum
   */
 typedef struct
 {
-    ButtonState_t  State;                  /**< Current state of the button. */
+    ButtonState_t  State;                /**< Current state of the button. */
     GPIO_TypeDef *GpioPort;              /**< GPIO port where the button is connected. */
     uint16_t      GpioPin;               /**< GPIO pin where the button is connected. */
     uint32_t      LastTick;              /**< Timestamp of the last button event. */
     uint32_t      TimerDebounce;         /**< Debounce time in milliseconds. */
     uint32_t      TimerLongPressed;      /**< Time threshold for a long press. */
     uint32_t      TimerRepeat;           /**< Repeat time threshold for repeated presses. */
-    ReverseLogicGpio_t ReverseLogic;    /**< Logic level inversion for the button (if applicable). */
+    ReverseLogicGpio_t ReverseLogic;     /**< Logic level inversion for the button (if applicable). */
     uint16_t      NumberBtn;             /**< Identifier for the button (used in callbacks). */
 #if BTN_DOUBLE_DEBOUNCING
-    ButtonState_t StateBeforeRelease;
-    uint32_t	  TimerSecondDeboune;
-    uint32_t	  LastTickSecondDebounce;
+    ButtonState_t StateBeforeRelease;     /**< Previous button state before entering the release state. */
+    uint32_t	  TimerSecondDebounce;    /**< Debounce time for the release state in milliseconds. */
+    uint32_t	  LastTickSecondDebounce; /**< Timestamp of the last event during the release debounce phase. */
 #endif
     void(*ButtonPressed)(uint16_t);     /**< Callback function for button press event. */
     void(*ButtonLongPressed)(uint16_t); /**< Callback function for long press event. */
@@ -339,6 +348,21 @@ void ButtonRegisterTripleClickCallback(button_t *Key, void *Callback);
   * @retval None
   */
 void ButtonSetDebounceTime(button_t * Key, uint32_t Miliseconds);
+
+#if BTN_DOUBLE_DEBOUNCING
+/**
+ * @brief Sets the debounce time for button release handling.
+ *
+ * This function configures the debounce time used during the release state
+ * when double debouncing is enabled (`BTN_DOUBLE_DEBOUNCING`). It determines
+ * how long the button signal must stabilize after being released before
+ * transitioning to the final state.
+ *
+ * @param Key Pointer to the button structure.
+ * @param Miliseconds Debounce time in milliseconds.
+ */
+void ButtonSetReleaseDebounceTime(button_t * Key, uint32_t Miliseconds);
+#endif
 
 
 /**

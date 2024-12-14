@@ -238,6 +238,10 @@ void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uin
 	Key->ReverseLogic = ReverseLogic;
 	Key->NumberBtn = Number;
 
+#if BTN_DOUBLE_DEBOUNCING
+	Key->TimerSecondDebounce = TimerDebounce;
+#endif
+
 #if BTN_MULTIPLE_CLICK
 	Key->MultipleClickMode = BTN_MULTIPLE_CLICK_OFF;
 #endif
@@ -276,6 +280,10 @@ void ButtonInitKeyDefault(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioP
 
 	Key->ReverseLogic = ReverseLogic;
 	Key->NumberBtn = Number;
+
+#if BTN_DOUBLE_DEBOUNCING
+	Key->TimerSecondDebounce = BTN_DEFAULT_TIME_DEBOUNCE;
+#endif
 
 #if BTN_MULTIPLE_CLICK
 	Key->MultipleClickMode = BTN_MULTIPLE_CLICK_OFF;
@@ -483,12 +491,19 @@ static void ButtonRepeatRoutine(button_t *Key)
 	}
 }
 
-
-
 #if BTN_DOUBLE_DEBOUNCING
+/**
+ * @brief Handles the debounce logic for the button release state.
+ *
+ * This routine checks if the button is stable (debounced) after being released.
+ * It determines the next state of the button based on its previous state (`StateBeforeRelease`)
+ * and the current GPIO pin logic level.
+ *
+ * @param Key Pointer to the button structure being processed.
+ */
 static void ButtonDebounceReleaseRoutine(button_t *Key)
 {
-	if((BTN_LIB_TICK - Key->LastTickSecondDebounce) >= Key->TimerDebounce)
+	if((BTN_LIB_TICK - Key->LastTickSecondDebounce) >= Key->TimerSecondDebounce)
 	{
 		if(ReadState(Key->GpioPort, Key->GpioPin) != (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
 		{
@@ -582,6 +597,7 @@ static void ButtonReleaseAfterRepeatRoutine(button_t *Key)
   *   - `ButtonDebounceRoutine` for the `DEBOUNCE` state.
   *   - `ButtonPressedRoutine` for the `PRESSED` state.
   *   - `ButtonRepeatRoutine` for the `REPEAT` state.
+  *   - `ButtonDebounceReleaseRoutine` for the `DEBOUNCE_RELEASE` state.
   *   - `ButtonReleaseRoutine` for the `RELEASE` state.
   *   - `ButtonReleaseAfterRepeatRoutine` for the `RELEASE_AFTER_REPEAT` state, if enabled.
   *
@@ -647,6 +663,25 @@ void ButtonSetDebounceTime(button_t * Key, uint32_t Miliseconds)
 {
 	Key->TimerDebounce = Miliseconds;
 }
+
+#if BTN_DOUBLE_DEBOUNCING
+/**
+ * @brief Configures the debounce time for release handling of a button.
+ *
+ * This function assigns a debounce time in milliseconds to the `TimerSecondDebounce`
+ * field of the given button structure. It is used during the double debounce process
+ * to ensure the button signal has stabilized after release.
+ *
+ * @param Key Pointer to the button structure being configured.
+ * @param Miliseconds Debounce time in milliseconds.
+ *
+ * @note This function is only available when `BTN_DOUBLE_DEBOUNCING` is enabled.
+ */
+void ButtonSetReleaseDebounceTime(button_t * Key, uint32_t Miliseconds)
+{
+	Key->TimerSecondDebounce = Miliseconds;
+}
+#endif
 
 /**
   * @brief Sets the long press time for the button.
