@@ -96,7 +96,7 @@ typedef enum
 #if BTN_RELEASE_AFTER_REPEAT
     RELEASE_AFTER_REPEAT /**< Button is released after repeat action, if enabled. */
 #endif
-} BUTTON_STATE;
+} ButtonState_t;
 
 /**
   * @brief Enum for GPIO reverse logic.
@@ -136,7 +136,7 @@ typedef enum
   */
 typedef struct
 {
-    BUTTON_STATE  State;                  /**< Current state of the button. */
+    ButtonState_t  State;                  /**< Current state of the button. */
     GPIO_TypeDef *GpioPort;              /**< GPIO port where the button is connected. */
     uint16_t      GpioPin;               /**< GPIO pin where the button is connected. */
     uint32_t      LastTick;              /**< Timestamp of the last button event. */
