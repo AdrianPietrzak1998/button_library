@@ -23,6 +23,9 @@
  */
 #define BTN_RELEASE_AFTER_REPEAT 1
 
+
+#define BTN_DOUBLE_DEBOUNCING 1
+
 /**
  * @def BTN_MULTIPLE_CLICK
  * @brief Enables or disables multiple click detection functionality.
@@ -92,7 +95,9 @@ typedef enum
     PRESSED,            /**< Button has been pressed and is being handled. */
     REPEAT,             /**< Button is being held down and the repeat action is being triggered. */
     RELEASE,            /**< Button has been released. */
-
+#if BTN_DOUBLE_DEBOUNCING
+	DEBOUNCE_RELEASE,   /**< Button is in the debounce state, waiting for the signal to stabilize. */
+#endif
 #if BTN_RELEASE_AFTER_REPEAT
     RELEASE_AFTER_REPEAT /**< Button is released after repeat action, if enabled. */
 #endif
@@ -145,7 +150,11 @@ typedef struct
     uint32_t      TimerRepeat;           /**< Repeat time threshold for repeated presses. */
     ReverseLogicGpio_t ReverseLogic;    /**< Logic level inversion for the button (if applicable). */
     uint16_t      NumberBtn;             /**< Identifier for the button (used in callbacks). */
-
+#if BTN_DOUBLE_DEBOUNCING
+    ButtonState_t StateBeforeRelease;
+    uint32_t	  TimerSecondDeboune;
+    uint32_t	  LastTickSecondDebounce;
+#endif
     void(*ButtonPressed)(uint16_t);     /**< Callback function for button press event. */
     void(*ButtonLongPressed)(uint16_t); /**< Callback function for long press event. */
     void(*ButtonRepeat)(uint16_t);      /**< Callback function for repeat press event. */

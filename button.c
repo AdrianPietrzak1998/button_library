@@ -413,7 +413,13 @@ static void ButtonPressedRoutine(button_t *Key)
 {
 	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
 	{
+#if BTN_DOUBLE_DEBOUNCING
+		Key->StateBeforeRelease = Key->State;
+		Key->State = DEBOUNCE_RELEASE;
+		Key->LastTickSecondDebounce = BTN_LIB_TICK;
+#else
 		Key->State = RELEASE;
+#endif
 	}
 	else if(BTN_LIB_TICK - Key->LastTick >= Key->TimerLongPressed)
 	{
@@ -455,10 +461,16 @@ static void ButtonRepeatRoutine(button_t *Key)
 #endif
 	if(ReadState(Key->GpioPort, Key->GpioPin) == (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
 	{
+#if BTN_DOUBLE_DEBOUNCING
+		Key->StateBeforeRelease = Key->State;
+		Key->State = DEBOUNCE_RELEASE;
+		Key->LastTickSecondDebounce = BTN_LIB_TICK;
+#else
 #if !BTN_RELEASE_AFTER_REPEAT
 		Key->State = RELEASE;
 #else
 		Key->State = RELEASE_AFTER_REPEAT;
+#endif
 #endif
 	}
 	else if(BTN_LIB_TICK - Key->LastTick >= Key->TimerRepeat)
@@ -470,6 +482,36 @@ static void ButtonRepeatRoutine(button_t *Key)
 		}
 	}
 }
+
+
+
+#if BTN_DOUBLE_DEBOUNCING
+static void ButtonDebounceReleaseRoutine(button_t *Key)
+{
+	if((BTN_LIB_TICK - Key->LastTickSecondDebounce) >= Key->TimerDebounce)
+	{
+		if(ReadState(Key->GpioPort, Key->GpioPin) != (Key->ReverseLogic==0)?BTN_SET:BTN_RESET)
+		{
+			Key->State = Key->StateBeforeRelease;
+		}
+		else
+		{
+#if BTN_RELEASE_AFTER_REPEAT
+			if(Key->StateBeforeRelease == PRESSED)
+			{
+				Key->State = RELEASE;
+			}
+			else if(Key->StateBeforeRelease == REPEAT)
+			{
+				Key->State = RELEASE_AFTER_REPEAT;
+			}
+#else
+			Key->State = RELEASE;
+#endif
+		}
+	}
+}
+#endif
 
 /**
   * @brief Handles the release state of the button.
@@ -570,6 +612,12 @@ void ButtonTask(button_t *Key)
 	case REPEAT:
 		ButtonRepeatRoutine(Key);
 		break;
+
+#if BTN_DOUBLE_DEBOUNCING
+	case DEBOUNCE_RELEASE:
+		ButtonDebounceReleaseRoutine(Key);
+		break;
+#endif
 
 	case RELEASE:
 		ButtonReleaseRoutine(Key);
