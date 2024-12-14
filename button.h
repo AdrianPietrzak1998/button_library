@@ -8,88 +8,8 @@
 #ifndef INC_BUTTON_H_
 #define INC_BUTTON_H_
 
-/**
-  * @brief Preprocessor macros for button functionality configuration.
-  *
-  * These macros control the behavior and features of the button functionality, such as enabling
-  * multiple click detection, long press handling, debounce timing, and more. Adjusting these
-  * macros will modify the way the button logic is processed in the system.
-  */
-
-/**
- * @def BTN_RELEASE_AFTER_REPEAT
- * @brief Enables or disables the release after repeat state for the button.
- * If set to 1, the button will trigger a release_after_repeat event after the repeat action.
- */
-#define BTN_RELEASE_AFTER_REPEAT 1
-
-/**
- * @def BTN_DOUBLE_DEBOUNCING
- * @brief Enables or disables the debouncing for button release.
- *
- * If set to 1, the button will apply debouncing logic not only on press but also on release.
- * This ensures that any mechanical bouncing or signal noise during the release of the button
- * is filtered out, providing more stable and reliable button behavior.
- *
- * If set to 0, the debouncing will only be applied during the press event.
- */
-#define BTN_DOUBLE_DEBOUNCING 1
-
-/**
- * @def BTN_MULTIPLE_CLICK
- * @brief Enables or disables multiple click detection functionality.
- * If set to 1, the button will support handling multiple clicks within a specified time.
- */
-#define BTN_MULTIPLE_CLICK 1
-
-/**
- * @def BTN_MULTIPLE_CLICK_COMBINED_TO_MUCH_AS_TRIPLE
- * @brief Defines the behavior for handling too many clicks in combined mode.
- * If set to 1, multiple clicks beyond triple will be treated as a triple click.
- */
-#define BTN_MULTIPLE_CLICK_COMBINED_TO_MUCH_AS_TRIPLE 1
-
-/**
- * @def BTN_DEFAULT_INIT
- * @brief Enables or disables the use of default button initialization values.
- * If set to 1, the default values for debounce, long press, and repeat will be used in
- * the ButtonInitKeyDefault initialization function.
- */
-#define BTN_DEFAULT_INIT 1
-
-/**
- * @def BTN_FORCE_NON_HAL
- * @brief Forces the use of non-HAL GPIO drivers.
- * If set to 1, the code will use direct register access for GPIO operations instead of the HAL driver.
- */
-#define BTN_FORCE_NON_HAL 1
-
-#if BTN_DEFAULT_INIT
-/**
- * @def BTN_DEFAULT_TIME_DEBOUNCE
- * @brief Default debounce time in milliseconds.
- * This defines how long the button's signal is allowed to stabilize before detecting a valid press.
- */
-#define BTN_DEFAULT_TIME_DEBOUNCE 50
-
-/**
- * @def BTN_DEFAULT_TIME_LONG_PRESS
- * @brief Default time for detecting a long press in milliseconds.
- * A long press is detected if the button is held for at least this duration.
- */
-#define BTN_DEFAULT_TIME_LONG_PRESS 500
-
-/**
- * @def BTN_DEFAULT_TIME_REPEAT
- * @brief Default time for repeat actions in milliseconds.
- * This defines how frequently the button repeats its action after being held down.
- */
-#define BTN_DEFAULT_TIME_REPEAT 300
-#endif
-
-
-
-
+#include <stdint.h>
+#include "button_cfg.h"
 
 /**
   * @brief Enum for button states.
@@ -150,19 +70,19 @@ typedef enum
   */
 typedef struct
 {
-    ButtonState_t  State;                /**< Current state of the button. */
-    GPIO_TypeDef *GpioPort;              /**< GPIO port where the button is connected. */
-    uint16_t      GpioPin;               /**< GPIO pin where the button is connected. */
-    uint32_t      LastTick;              /**< Timestamp of the last button event. */
-    uint32_t      TimerDebounce;         /**< Debounce time in milliseconds. */
-    uint32_t      TimerLongPressed;      /**< Time threshold for a long press. */
-    uint32_t      TimerRepeat;           /**< Repeat time threshold for repeated presses. */
+    ButtonState_t   State;                /**< Current state of the button. */
+    GPIO_TypeDef   *GpioPort;              /**< GPIO port where the button is connected. */
+    BTN_GPIO_PIN_T  GpioPin;               /**< GPIO pin where the button is connected. */
+    BTN_TIMER_T     LastTick;              /**< Timestamp of the last button event. */
+    BTN_TIMER_T     TimerDebounce;         /**< Debounce time in milliseconds. */
+    BTN_TIMER_T     TimerLongPressed;      /**< Time threshold for a long press. */
+    BTN_TIMER_T     TimerRepeat;           /**< Repeat time threshold for repeated presses. */
     ReverseLogicGpio_t ReverseLogic;     /**< Logic level inversion for the button (if applicable). */
-    uint16_t      NumberBtn;             /**< Identifier for the button (used in callbacks). */
+    uint16_t        NumberBtn;             /**< Identifier for the button (used in callbacks). */
 #if BTN_DOUBLE_DEBOUNCING
     ButtonState_t StateBeforeRelease;     /**< Previous button state before entering the release state. */
-    uint32_t	  TimerSecondDebounce;    /**< Debounce time for the release state in milliseconds. */
-    uint32_t	  LastTickSecondDebounce; /**< Timestamp of the last event during the release debounce phase. */
+    BTN_TIMER_T	  TimerSecondDebounce;    /**< Debounce time for the release state in milliseconds. */
+    BTN_TIMER_T	  LastTickSecondDebounce; /**< Timestamp of the last event during the release debounce phase. */
 #endif
     void(*ButtonPressed)(uint16_t);     /**< Callback function for button press event. */
     void(*ButtonLongPressed)(uint16_t); /**< Callback function for long press event. */
@@ -198,8 +118,8 @@ typedef struct
   * @param Number Button identifier passed to callback functions.
   * @retval None
   */
-void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uint32_t TimerDebounce, uint32_t TimerLongPressed,
-					uint32_t TimerRepeat, ReverseLogicGpio_t ReverseLogic, uint16_t Number); // Initialization for state machine
+void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, BTN_TIMER_T TimerDebounce, BTN_TIMER_T TimerLongPressed,
+			BTN_TIMER_T TimerRepeat, ReverseLogicGpio_t ReverseLogic, uint16_t Number); // Initialization for state machine
 #if BTN_DEFAULT_INIT
 /**
   * @brief Initializes a button structure with default timing values.
@@ -347,7 +267,7 @@ void ButtonRegisterTripleClickCallback(button_t *Key, void *Callback);
   * @param Miliseconds Debounce time in milliseconds.
   * @retval None
   */
-void ButtonSetDebounceTime(button_t * Key, uint32_t Miliseconds);
+void ButtonSetDebounceTime(button_t * Key, BTN_TIMER_T Miliseconds);
 
 #if BTN_DOUBLE_DEBOUNCING
 /**
@@ -361,7 +281,7 @@ void ButtonSetDebounceTime(button_t * Key, uint32_t Miliseconds);
  * @param Key Pointer to the button structure.
  * @param Miliseconds Debounce time in milliseconds.
  */
-void ButtonSetReleaseDebounceTime(button_t * Key, uint32_t Miliseconds);
+void ButtonSetReleaseDebounceTime(button_t * Key, BTN_TIMER_T Miliseconds);
 #endif
 
 
@@ -376,7 +296,7 @@ void ButtonSetReleaseDebounceTime(button_t * Key, uint32_t Miliseconds);
   * @param Miliseconds Time for long press detection in milliseconds.
   * @retval None
   */
-void ButtonSetLongPressedTime(button_t *Key, uint32_t Miliseconds);
+void ButtonSetLongPressedTime(button_t *Key, BTN_TIMER_T Miliseconds);
 
 
 /**
@@ -389,7 +309,7 @@ void ButtonSetLongPressedTime(button_t *Key, uint32_t Miliseconds);
   * @param Miliseconds Time for repeat detection in milliseconds.
   * @retval None
   */
-void ButtonSetRepeatTime(button_t *Key, uint32_t Miliseconds);
+void ButtonSetRepeatTime(button_t *Key, BTN_TIMER_T Miliseconds);
 
 #if BTN_MULTIPLE_CLICK
 /**
@@ -402,7 +322,7 @@ void ButtonSetRepeatTime(button_t *Key, uint32_t Miliseconds);
   * @param Miliseconds Time between consecutive clicks in milliseconds.
   * @retval None
   */
-void ButtonSetMultipleClickTime(button_t *Key, uint32_t Miliseconds);
+void ButtonSetMultipleClickTime(button_t *Key, BTN_TIMER_T Miliseconds);
 #endif
 
 #endif /* INC_BUTTON_H_ */

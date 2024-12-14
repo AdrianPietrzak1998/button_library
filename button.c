@@ -8,8 +8,6 @@
 #include "main.h"
 #include "button.h"
 
-#define BTN_LIB_TICK uwTick //Miliseconds timer 32-bit
-
 #if BTN_FORCE_NON_HAL
 #undef USE_HAL_DRIVER
 #define HAL_TO_DEFINE
@@ -37,8 +35,11 @@
   *         - `BTN_SET` if the pin is high.
   *         - `BTN_RESET` if the pin is low.
   */
-static uint8_t ReadState(const GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
+static uint8_t ReadState(BTN_GPIO_PORT_T *GPIOx, BTN_GPIO_PIN_T GPIO_Pin)
 {
+#if BTN_USER_READ_PIN_ROUTINE
+
+#else
 #ifdef USE_HAL_DRIVER
 	return HAL_GPIO_ReadPin(GPIOx, GPIO_Pin);
 #else
@@ -50,6 +51,7 @@ static uint8_t ReadState(const GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
 	  {
 	    return BTN_RESET;
 	  }
+#endif
 #endif
 }
 
@@ -225,8 +227,8 @@ static void multipleClikRepeat(button_t * Key)
   * @param Number Button identifier passed to callback functions.
   * @retval None
   */
-void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uint32_t TimerDebounce,
-			uint32_t TimerLongPressed, uint32_t TimerRepeat, ReverseLogicGpio_t ReverseLogic, uint16_t Number)
+void ButtonInitKey(button_t * Key, BTN_GPIO_PORT_T *GpioPort, BTN_GPIO_PIN_T GpioPin, BTN_TIMER_T TimerDebounce,
+		BTN_TIMER_T TimerLongPressed, BTN_TIMER_T TimerRepeat, ReverseLogicGpio_t ReverseLogic, uint16_t Number)
 {
 	Key->State = IDLE;
 	Key->GpioPort = GpioPort;
@@ -268,7 +270,7 @@ void ButtonInitKey(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin, uin
   * @param Number Button identifier passed to callback functions.
   * @retval None
   */
-void ButtonInitKeyDefault(button_t * Key, GPIO_TypeDef *GpioPort, uint16_t GpioPin,
+void ButtonInitKeyDefault(button_t * Key, BTN_GPIO_PORT_T *GpioPort, BTN_GPIO_PIN_T GpioPin,
 		ReverseLogicGpio_t ReverseLogic, uint16_t Number)
 {
 	Key->State = IDLE;
@@ -659,7 +661,7 @@ void ButtonTask(button_t *Key)
   * @param Miliseconds Debounce time in milliseconds.
   * @retval None
   */
-void ButtonSetDebounceTime(button_t * Key, uint32_t Miliseconds)
+void ButtonSetDebounceTime(button_t * Key, BTN_TIMER_T Miliseconds)
 {
 	Key->TimerDebounce = Miliseconds;
 }
@@ -677,7 +679,7 @@ void ButtonSetDebounceTime(button_t * Key, uint32_t Miliseconds)
  *
  * @note This function is only available when `BTN_DOUBLE_DEBOUNCING` is enabled.
  */
-void ButtonSetReleaseDebounceTime(button_t * Key, uint32_t Miliseconds)
+void ButtonSetReleaseDebounceTime(button_t * Key, BTN_TIMER_T Miliseconds)
 {
 	Key->TimerSecondDebounce = Miliseconds;
 }
@@ -694,7 +696,7 @@ void ButtonSetReleaseDebounceTime(button_t * Key, uint32_t Miliseconds)
   * @param Miliseconds Time for long press detection in milliseconds.
   * @retval None
   */
-void ButtonSetLongPressedTime(button_t *Key, uint32_t Miliseconds)
+void ButtonSetLongPressedTime(button_t *Key, BTN_TIMER_T Miliseconds)
 {
 	Key->TimerLongPressed = Miliseconds;
 }
@@ -709,7 +711,7 @@ void ButtonSetLongPressedTime(button_t *Key, uint32_t Miliseconds)
   * @param Miliseconds Time for repeat detection in milliseconds.
   * @retval None
   */
-void ButtonSetRepeatTime(button_t *Key, uint32_t Miliseconds)
+void ButtonSetRepeatTime(button_t *Key, BTN_TIMER_T Miliseconds)
 {
 	Key->TimerRepeat = Miliseconds;
 }
@@ -725,7 +727,7 @@ void ButtonSetRepeatTime(button_t *Key, uint32_t Miliseconds)
   * @param Miliseconds Time between consecutive clicks in milliseconds.
   * @retval None
   */
-void ButtonSetMultipleClickTime(button_t *Key, uint32_t Miliseconds)
+void ButtonSetMultipleClickTime(button_t *Key, BTN_TIMER_T Miliseconds)
 {
 	Key->TimerBetweenClick = Miliseconds;
 }
