@@ -1,8 +1,11 @@
 /*
- * button_cfg.h
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- *  Created on: Dec 14, 2024
- *      Author: Adrian Pietrzak
+ * Author: Adrian Pietrzak
+ * GitHub: https://github.com/AdrianPietrzak1998
+ * Created: Dec 14, 2024
  */
 
 #ifndef BUTTON_LIBRARY_BUTTON_CFG_H_
