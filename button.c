@@ -8,8 +8,9 @@
  * Created: May 7, 2022
  */
 
-#include "main.h"
+#include "stddef.h"
 #include "button.h"
+#include "assert.h"
 
 #if BTN_FORCE_NON_HAL
 #undef USE_HAL_DRIVER
@@ -22,6 +23,34 @@
 #else
 #define BTN_SET 1
 #define BTN_RESET 0
+#endif
+
+#if BTN_TICK_FROM_FUNC
+
+BTN_TIMER_T (*BTN_get_tick)(void) = NULL;
+
+#define BTN_LIB_TICK ((BTN_get_tick != NULL) ? BTN_get_tick() : ((BTN_TIMER_T)0))
+
+void BTN_tick_function_register(BTN_TIMER_T (*Function)(void))
+{
+    assert(Function != NULL);
+
+    BTN_get_tick = Function;
+}
+
+#else
+
+BTN_TIMER_T *BTN_tick = NULL;
+
+#define BTN_LIB_TICK (*(BTN_tick))
+
+void BTN_tick_variable_register(BTN_TIMER_T *Variable)
+{
+    assert(Variable != NULL);
+
+    BTN_tick = Variable;
+}
+
 #endif
 
 /* ========================== Helper Functions ========================= */

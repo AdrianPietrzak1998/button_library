@@ -111,6 +111,27 @@ typedef struct
 #endif
 } button_t;
 
+/**
+ * @brief Registers the time source for the button library tick mechanism.
+ *
+ * This function is used to provide the state machine with a time base for managing timeouts,
+ * delays, and transition timing. Depending on the configuration (`BTN_TICK_FROM_FUNC`),
+ * the user must provide either a function that returns the current time or a pointer to
+ * a variable representing the current time.
+ *
+ * - If `BTN_TICK_FROM_FUNC` is set to 1, call `BTN_tick_function_register()` with a function
+ *   that returns the current tick value.
+ * - If `BTN_TICK_FROM_FUNC` is set to 0, call `BTN_tick_variable_register()` with a pointer
+ *   to a variable that is periodically updated with the current tick value.
+ *
+ * @param Function Pointer to the function returning the current time tick (only if `BTN_TICK_FROM_FUNC` is 1).
+ * @param Variable Pointer to the time tick variable (only if `BTN_TICK_FROM_FUNC` is 0).
+ */
+#if BTN_TICK_FROM_FUNC
+void BTN_tick_function_register(BTN_TIMER_T (*Function)(void));
+#else
+void BTN_tick_variable_register(BTN_TIMER_T *Variable);
+#endif
 
 /* ========================== Initialization Functions ========================= */
 /**

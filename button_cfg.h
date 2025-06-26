@@ -20,6 +20,57 @@
   */
 
 /**
+  * Includes
+  */
+#include "main.h"
+
+/**
+ * @brief Selects the time source for the state machine tick.
+ *
+ * If set to 1, the state machine uses a user-provided function to retrieve the current time.
+ * If set to 0, the state machine uses a pointer to a global time variable.
+ */
+#define BTN_TICK_FROM_FUNC 0
+
+/**
+ * @brief Time base configuration for the state machine module.
+ *
+ * By default, the system tick type is `uint32_t`. To use a custom type, define `BTN_TIME_BASE_TYPE_CUSTOM`
+ * as the desired type (e.g. `uint16_t`, `int64_t`, etc.) and define the appropriate `_IS_*` macro
+ * (e.g. `BTN_TIME_BASE_TYPE_CUSTOM_IS_UINT16`) to allow the code to determine `BTN_MAX_TIMEOUT`.
+ */
+#ifndef BTN_TIME_BASE_TYPE_CUSTOM
+
+#define BTN_MAX_TIMEOUT UINT32_MAX
+typedef volatile uint32_t BTN_TIMER_T;
+
+#else
+
+typedef BTN_TIME_BASE_TYPE_CUSTOM BTN_TIMER_T;
+
+#if defined(BTN_TIME_BASE_TYPE_CUSTOM_IS_UINT8)
+#define BTN_MAX_TIMEOUT UINT8_MAX
+#elif defined(BTN_TIME_BASE_TYPE_CUSTOM_IS_UINT16)
+#define BTN_MAX_TIMEOUT UINT16_MAX
+#elif defined(BTN_TIME_BASE_TYPE_CUSTOM_IS_UINT32)
+#define BTN_MAX_TIMEOUT UINT32_MAX
+#elif defined(BTN_TIME_BASE_TYPE_CUSTOM_IS_UINT64)
+#define BTN_MAX_TIMEOUT UINT64_MAX
+#elif defined(BTN_TIME_BASE_TYPE_CUSTOM_IS_INT8)
+#define BTN_MAX_TIMEOUT INT8_MAX
+#elif defined(BTN_TIME_BASE_TYPE_CUSTOM_IS_INT16)
+#define BTN_MAX_TIMEOUT INT16_MAX
+#elif defined(BTN_TIME_BASE_TYPE_CUSTOM_IS_INT32)
+#define BTN_MAX_TIMEOUT INT32_MAX
+#elif defined(BTN_TIME_BASE_TYPE_CUSTOM_IS_INT64)
+#define BTN_MAX_TIMEOUT INT64_MAX
+#else
+#error "BTN_MAX_TIMEOUT: Unknown BTN_TIME_BASE_TYPE_CUSTOM or missing _IS_* define"
+#endif
+
+#endif
+
+/**
  * @def BTN_RELEASE_AFTER_REPEAT
  * @brief Enables or disables the release after repeat state for the button.
  * If set to 1, the button will trigger a release_after_repeat event after the repeat action.
@@ -103,17 +154,6 @@
 #define BTN_DEFAULT_TIME_REPEAT 300
 #endif
 
-/**
- * @def BTN_LIB_TICK
- * @brief Defines the variable used as the timer source for the library.
- *
- * This variable must provide the current time in milliseconds as an `unsigned` value.
- * It is used for timing operations such as debounce, long press, and repeat detection.
- *
- * @note Ensure that this timer increments continuously in milliseconds and does not overflow too quickly.
- * For STM32 HAL-based projects, `uwTick` is commonly used as it is updated in the SysTick interrupt.
- */
-#define BTN_LIB_TICK uwTick //Miliseconds timer
 
 /**
  * @def BTN_USER_READ_PIN_ROUTINE
@@ -128,17 +168,6 @@
  */
 #define BTN_USER_READ_PIN_ROUTINE 0
 
-/**
- * @def BTN_TIMER_T
- * @brief Defines the data type used for timer values within the library.
- *
- * This type must be an `unsigned` integer that can represent time in milliseconds.
- * It is used for internal timing variables such as debounce time, long press duration, and repeat intervals.
- *
- * @default `uint32_t` is recommended for most platforms as it provides sufficient range for timing.
- * @note Ensure that the chosen type matches the resolution and range of your timer source.
- */
-#define BTN_TIMER_T uint32_t
 
 /**
  * @def BTN_GPIO_PORT_T
