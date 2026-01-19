@@ -260,7 +260,7 @@ BTN_operate_status ButtonSetMultipleClick(button_t *Key,
 ```
 Click 1: ButtonPressed(1)
 Click 2: ButtonPressed(2) + ButtonDoubleClick(1)
-Click 3: ButtonPressed(3) + ButtonTripleClick(1)
+Click 3: ButtonPressed(3) + ButtonDoubleClick(1) + ButtonTripleClick(1)
 ```
 
 **Combined Mode Behavior:**
