@@ -8,6 +8,7 @@
  * Created: May 7, 2022
  */
 #include "button.h"
+#include <string.h>
 
 #if BTN_FORCE_NON_HAL
 #undef USE_HAL_DRIVER
@@ -22,7 +23,7 @@
 #define BTN_RESET 0
 #endif
 
-#if SM_TICK_FROM_FUNC
+#if BTN_TICK_FROM_FUNC
 static BTN_TIME_t (*BTN_get_tick)(void) = NULL;
 #define BTN_GET_TICK ((SM_get_tick != NULL) ? BTN_get_tick() : ((BTN_TIME_t)0))
 BTN_operate_status BTN_tick_function_register(BTN_TIME_t (*Function)(void))
@@ -264,10 +265,7 @@ static void multipleClikRepeat(button_t *Key)
 
 static void ButtonResetInstance(button_t *Key)
 {
-    for (uint8_t i = 0; i < sizeof(button_t); i++)
-    {
-        ((uint8_t *)Key)[i] = 0;
-    }
+    memset(Key, 0, sizeof(button_t));
 }
 
 /* ========================== Initialization Functions =========================
@@ -303,6 +301,7 @@ BTN_operate_status ButtonInitKey(button_t *Key, BTN_GPIO_PORT_T *GpioPort, BTN_G
     }
     ButtonResetInstance(Key);
     Key->State = IDLE;
+    Key->LastTick = BTN_GET_TICK;
     Key->GpioPort = GpioPort;
     Key->GpioPin = GpioPin;
     Key->TimerDebounce = TimerDebounce;
@@ -360,6 +359,7 @@ BTN_operate_status ButtonInitKeyDefault(button_t *Key, BTN_GPIO_PORT_T *GpioPort
 
     ButtonResetInstance(Key);
     Key->State = IDLE;
+    Key->LastTick = BTN_GET_TICK;
     Key->GpioPort = GpioPort;
     Key->GpioPin = GpioPin;
     Key->TimerDebounce = BTN_DEFAULT_TIME_DEBOUNCE;
